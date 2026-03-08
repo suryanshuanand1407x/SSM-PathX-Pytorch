@@ -45,7 +45,7 @@ from logging_utils import LoggerFactory, MetricAggregator
 # Model Architecture
 VOCAB_SIZE = 256              # Grayscale pixel values (0-255)
 MAX_SEQ_LEN = 16384          # Full 128x128 grid (flattened)
-D_MODEL = 64                # Model dimension
+D_MODEL = 128                # Model dimension
 N_LAYERS = 6                 # Number of Mamba blocks
 D_STATE = 16                 # SSM state dimension
 D_CONV = 4                   # Convolution kernel size
@@ -53,12 +53,12 @@ EXPAND = 2                   # Expansion factor
 MODE = "tustin"              # Discretization: "tustin", "vanilla", or "zoh"
 
 # Training Configuration
-BATCH_SIZE = 4               # Batch size (limited by 16k sequence length)
-GRADIENT_ACCUMULATION_STEPS = 8  # Effective batch = 2 × 16 = 32
-LEARNING_RATE = 3e-4         # Initial learning rate
+BATCH_SIZE = 16               # Batch size (limited by 16k sequence length)
+GRADIENT_ACCUMULATION_STEPS = 2  # Effective batch = 2 × 16 = 32
+LEARNING_RATE = 5e-4         # Initial learning rate
 WEIGHT_DECAY = 0.1           # AdamW weight decay
 MAX_ITERS = 20000            # Maximum training iterations
-WARMUP_ITERS = 500           # LR warmup iterations
+WARMUP_ITERS = 1000           # LR warmup iterations
 LR_DECAY_ITERS = MAX_ITERS   # LR decay schedule
 MIN_LR = 3e-5                # Minimum learning rate
 GRAD_CLIP = 1.0              # Gradient clipping threshold
@@ -453,35 +453,66 @@ def train(
     # Try to resume from checkpoint
     checkpoint_state = checkpoint_manager.load_latest_checkpoint()
     if checkpoint_state is not None:
-        # Handle torch.compile key mismatch: compiled models have "_orig_mod." prefix
-        state_dict = checkpoint_state['model_state_dict']
-        model_keys = set(model.state_dict().keys())
-        checkpoint_keys = set(state_dict.keys())
+        # --- Architecture compatibility check ---
+        # The checkpoint stores the model config it was saved with.  If the
+        # current hyperparameters differ (e.g. D_MODEL was changed) the weights
+        # cannot be loaded — we detect this early and start fresh instead of
+        # crashing with a cryptic size-mismatch RuntimeError.
+        ckpt_model_cfg = checkpoint_state.get('config', {}).get('model', {})
+        current_model_cfg = {
+            'vocab_size': VOCAB_SIZE,
+            'd_model':    D_MODEL,
+            'n_layers':   N_LAYERS,
+            'd_state':    D_STATE,
+            'd_conv':     D_CONV,
+            'expand':     EXPAND,
+            'mode':       MODE,
+        }
+        arch_mismatch = {
+            k for k in current_model_cfg
+            if ckpt_model_cfg.get(k) != current_model_cfg[k]
+        }
+        if arch_mismatch:
+            logging.warning("="*80)
+            logging.warning("ARCHITECTURE MISMATCH — checkpoint is incompatible with current hyperparameters.")
+            logging.warning("Changed keys: " + ", ".join(
+                f"{k}: {ckpt_model_cfg.get(k)} → {current_model_cfg[k]}"
+                for k in sorted(arch_mismatch)
+            ))
+            logging.warning("Starting from scratch (checkpoint weights discarded).")
+            logging.warning("="*80)
+            start_iter = 0
+            global_start_time = time.time()
+        else:
+            # Architecture matches — safe to load weights.
+            state_dict = checkpoint_state['model_state_dict']
+            model_keys = set(model.state_dict().keys())
+            checkpoint_keys = set(state_dict.keys())
 
-        # Check if we need to add/remove the "_orig_mod." prefix
-        if model_keys != checkpoint_keys:
-            # Case 1: Model is compiled, checkpoint is not -> add prefix
-            if any(k.startswith('_orig_mod.') for k in model_keys):
-                logging.info("  Adapting checkpoint for compiled model (adding _orig_mod. prefix)...")
-                state_dict = {f'_orig_mod.{k}': v for k, v in state_dict.items()}
-            # Case 2: Model is not compiled, checkpoint is compiled -> remove prefix
-            elif any(k.startswith('_orig_mod.') for k in checkpoint_keys):
-                logging.info("  Adapting checkpoint from compiled model (removing _orig_mod. prefix)...")
-                state_dict = {k.replace('_orig_mod.', ''): v for k, v in state_dict.items()}
+            # Handle torch.compile key mismatch: compiled models have "_orig_mod." prefix
+            if model_keys != checkpoint_keys:
+                # Case 1: Model is compiled, checkpoint is not -> add prefix
+                if any(k.startswith('_orig_mod.') for k in model_keys):
+                    logging.info("  Adapting checkpoint for compiled model (adding _orig_mod. prefix)...")
+                    state_dict = {f'_orig_mod.{k}': v for k, v in state_dict.items()}
+                # Case 2: Model is not compiled, checkpoint is compiled -> remove prefix
+                elif any(k.startswith('_orig_mod.') for k in checkpoint_keys):
+                    logging.info("  Adapting checkpoint from compiled model (removing _orig_mod. prefix)...")
+                    state_dict = {k.replace('_orig_mod.', ''): v for k, v in state_dict.items()}
 
-        model.load_state_dict(state_dict)
-        optimizer.load_state_dict(checkpoint_state['optimizer_state_dict'])
-        if scaler is not None and checkpoint_state['scaler_state_dict'] is not None:
-            scaler.load_state_dict(checkpoint_state['scaler_state_dict'])
-        start_iter = checkpoint_state['step'] + 1
-        global_start_time = time.time() - checkpoint_state.get('wall_clock_time', 0)
+            model.load_state_dict(state_dict)
+            optimizer.load_state_dict(checkpoint_state['optimizer_state_dict'])
+            if scaler is not None and checkpoint_state['scaler_state_dict'] is not None:
+                scaler.load_state_dict(checkpoint_state['scaler_state_dict'])
+            start_iter = checkpoint_state['step'] + 1
+            global_start_time = time.time() - checkpoint_state.get('wall_clock_time', 0)
 
-        # Restore RNG states
-        torch.set_rng_state(checkpoint_state['random_state']['torch'])
-        if checkpoint_state['random_state']['torch_cuda'] is not None:
-            torch.cuda.set_rng_state(checkpoint_state['random_state']['torch_cuda'])
+            # Restore RNG states
+            torch.set_rng_state(checkpoint_state['random_state']['torch'])
+            if checkpoint_state['random_state']['torch_cuda'] is not None:
+                torch.cuda.set_rng_state(checkpoint_state['random_state']['torch_cuda'])
 
-        logging.info(f"✓ Resumed from step {start_iter}")
+            logging.info(f"✓ Resumed from step {start_iter}")
     else:
         start_iter = 0
         global_start_time = time.time()

@@ -1,6 +1,5 @@
 # --- Research Artifacts (Gold Standard Practice) ---
 # Do not track local checkpoints or large weight files
-checkpointing/
 checkpoints_research/
 *.pt
 *.pth
