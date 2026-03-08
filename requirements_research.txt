@@ -1,0 +1,33 @@
+# Research Training Requirements for Tustin Mamba
+# ================================================
+# Install: pip install -r requirements_research.txt
+
+# NOTE: Install PyTorch FIRST based on your system:
+# --------------------------------------------------
+# Apple Silicon (M1/M2/M3/M4):
+#   pip install torch torchvision torchaudio
+#
+# NVIDIA GPU with CUDA 11.8:
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+#
+# NVIDIA GPU with CUDA 12.1:
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+#
+# CPU Only:
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# Core Dependencies
+# -----------------
+numpy>=1.24.0
+wandb>=0.16.0
+
+# Optional (Recommended for visualization)
+# -----------------------------------------
+tqdm>=4.65.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Additional (Optional for advanced analysis)
+# --------------------------------------------
+scipy>=1.10.0
+pandas>=2.0.0

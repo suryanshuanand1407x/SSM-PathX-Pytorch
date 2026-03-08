@@ -1,0 +1,39 @@
+# --- Research Artifacts (Gold Standard Practice) ---
+# Do not track local checkpoints or large weight files
+checkpointing/
+checkpoints_research/
+*.pt
+*.pth
+*.ckpt
+
+# Do not track local experiment results or large log files
+results/
+wandb/
+*.log
+*.csv
+
+# --- System & Python Cleanup ---
+# General Python artifacts
+.DS_Store
+*.py[cod]
+*$py.class
+dist/
+build/
+*.egg-info/
+
+# --- Environment & Project Specifics ---
+# Explicitly ignored per your request:
+# __pycache__, .claude, .vscode, archive, and the dataset zip
+__pycache__/
+.claude/
+.vscode/
+archive/
+long-range-arena-processed.zip
+long-range-arena-processed/
+
+# --- Git LFS (Optional but recommended) ---
+# If you decide to track small sample data or PDFs of plots, 
+# ensure they are handled properly, but usually, we ignore large data:
+*.pickle
+*.npy
+*.bin
