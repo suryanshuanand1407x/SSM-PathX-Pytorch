@@ -1,0 +1,81 @@
+{
+  "checkpoint": {
+    "path": "checkpoints_research/checkpoint_step19872_20260311_211604.pt",
+    "step": 19872,
+    "timestamp": "20260311_211604",
+    "wall_clock_h": 74.126,
+    "metrics": {
+      "train_loss": 0.69189453125
+    },
+    "model_config": {
+      "vocab_size": 256,
+      "d_model": 128,
+      "n_layers": 6,
+      "d_state": 16,
+      "d_conv": 4,
+      "expand": 2,
+      "mode": "tustin"
+    }
+  },
+  "eval_config": {
+    "num_batches": 50,
+    "batch_size": 4,
+    "id_cond_baseline": 4.12
+  },
+  "results": {
+    "ID": {
+      "accuracy": 0.52,
+      "accuracy_std": 0.24413111231467405,
+      "predictive_entropy": 0.9999602866172791,
+      "predictive_entropy_std": 9.228716633759337e-06,
+      "spectral_radius": 0.85046875,
+      "spectral_radius_std": 0.005358258812338202,
+      "tustin_cond": 4.1179656982421875,
+      "tustin_cond_std": 0.00025696170015921554,
+      "erf": 27.8,
+      "erf_std": 0.9797958971132712,
+      "latent_variance": 0.6941475903987885,
+      "latent_variance_std": 0.0010932616973865922
+    },
+    "Near-OOD": {
+      "accuracy": 0.56,
+      "accuracy_std": 0.24779023386727733,
+      "predictive_entropy": 0.9999908578395843,
+      "predictive_entropy_std": 3.36824555538847e-06,
+      "spectral_radius": 0.846796875,
+      "spectral_radius_std": 0.0016181496232193736,
+      "tustin_cond": 4.119279928207398,
+      "tustin_cond_std": 5.232196620238513e-06,
+      "erf": 27.0,
+      "erf_std": 0.0,
+      "latent_variance": 0.5800218284130096,
+      "latent_variance_std": 0.000784198199796051
+    },
+    "Noise-OOD": {
+      "predictive_entropy": 0.9997547006607056,
+      "predictive_entropy_std": 1.5065126308138936e-05,
+      "spectral_radius": 0.851796875,
+      "spectral_radius_std": 0.007345827498697815,
+      "tustin_cond": 4.119164743423462,
+      "tustin_cond_std": 0.0002443683219976818,
+      "erf": 28.3,
+      "erf_std": 1.5905973720586866,
+      "latent_variance": 0.6035506451129913,
+      "latent_variance_std": 0.00030876712072168194
+    },
+    "Far-OOD": {
+      "accuracy": 0.075,
+      "accuracy_std": 0.11456439237389598,
+      "predictive_entropy": 0.9996679055690766,
+      "predictive_entropy_std": 0.0002052135858428,
+      "spectral_radius": 0.850546875,
+      "spectral_radius_std": 0.007607064587646473,
+      "tustin_cond": 4.119164304733276,
+      "tustin_cond_std": 0.00015242119296386746,
+      "erf": 28.02,
+      "erf_std": 1.618517840494815,
+      "latent_variance": 0.6016562819480896,
+      "latent_variance_std": 0.003252779311074903
+    }
+  }
+}
