@@ -54,7 +54,7 @@ MODE = "tustin"              # Discretization: "tustin", "vanilla", or "zoh"
 
 # Training Configuration
 BATCH_SIZE = 4                # Batch size (reduced for 40GB GPU with 16k sequences)
-GRADIENT_ACCUMULATION_STEPS = 16  # Effective batch = 8 × 4 = 32
+GRADIENT_ACCUMULATION_STEPS = 8  # Effective batch = 8 × 4 = 32
 LEARNING_RATE = 5e-4         # Initial learning rate
 WEIGHT_DECAY = 0.1           # AdamW weight decay
 MAX_ITERS = 50000            # Maximum training iterations
